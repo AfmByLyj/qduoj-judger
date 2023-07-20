@@ -175,7 +175,11 @@ class JudgeClient(object):
         # if progress exited normally, then we should check output result
         run_result["output_md5"] = None
         run_result["output"] = None
-        run_result["output_sys"] = None
+        try:
+            run_result["output_sys"] = self._get_test_case_sys_out(test_case_file_id)
+            if len(run_result['output_sys']) >= 10000: run_result['output_sys'] = run_result['output_sys'][:9997] + "..."
+        except:
+            run_result["output_sys"] = None
         run_result["input_sys"] = self._get_test_case_sys_in(test_case_file_id)
         run_result["output_user"] = self._user_output(user_output_file)
         if len(run_result['input_sys']) >= 10000: run_result['input_sys'] = run_result['input_sys'][:9997] + "..."
@@ -189,20 +193,16 @@ class JudgeClient(object):
                         raise JudgeClientError("spj_config or spj_version not set")
 
                     spj_result = self._spj(in_file_path=in_file, user_out_file_path=user_output_file)
-                    run_result['output_sys'] = "Special Judge, Answers are not unique"
                     if spj_result == SPJ_WA:
                         run_result["result"] = _judger.RESULT_WRONG_ANSWER
                     elif spj_result == SPJ_ERROR:
                         run_result["result"] = _judger.RESULT_SYSTEM_ERROR
                         run_result["error"] = _judger.ERROR_SPJ_ERROR
                 else:
-                    run_result['output_sys'] = self._get_test_case_sys_out(test_case_file_id)
                     run_result["output_md5"], is_ac  = self._compare_output(test_case_file_id, user_output_file)
                     # -1 == Wrong Answer
                     if not is_ac:
                         run_result["result"] = _judger.RESULT_WRONG_ANSWER
-                        
-                if len(run_result['output_sys']) >= 10000: run_result['output_sys'] = run_result['output_sys'][:9997] + "..."
                 
         if self._output:
             try:
